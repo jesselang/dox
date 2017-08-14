@@ -64,9 +64,10 @@ func Publish(file string, dryRun bool) (id string, err error) {
 	c.Version.Number = 1
 
 	if c.ID == "" {
-		c, _, err = wiki.CreateContent(c)
+		var resp []byte
+		c, resp, err = wiki.CreateContent(c)
 		if err != nil {
-			return
+			return "", errors.New(string(resp))
 		}
 		id = c.ID
 		// create
