@@ -2,7 +2,6 @@ package dox
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jesselang/go-confluence"
 	"os"
 )
@@ -35,49 +34,43 @@ func Publish(file string, dryRun bool) (id string, err error) {
 			password,
 		),
 	)
-
-	if dryRun {
-		id = "dry-run"
-		fmt.Println("dry-run")
-	} else {
-		fmt.Println("not dry-run")
-		id, err = GetContentId(file)
-		if err != nil {
-			return
-		}
-	}
-
-	c := &confluence.Content{
-		ID:   id,
-		Type: "page",
-	}
-
-	title, body, err := Convert(file)
 	if err != nil {
 		return
 	}
 
-	c.Title = title
-	c.Body.Storage.Value = body
-	c.Body.Storage.Representation = "storage"
-	c.Space.Key = space // should be taken from repo config
-	c.Version.Number = 1
+	src, err := NewSource(file)
+	if err != nil {
+		return
+	}
 
-	if c.ID == "" {
-		var resp []byte
-		c, resp, err = wiki.CreateContent(c)
-		if err != nil {
-			return "", errors.New(string(resp))
-		}
-		id = c.ID
-		// create
-		// set content id
-		err = UpdateContentId(file, id)
-		if err != nil {
-			return
-		}
+	if dryRun {
+		id = src.ID()
 	} else {
-		if !dryRun {
+		c := &confluence.Content{
+			ID:    src.ID(),
+			Type:  "page",
+			Title: src.Title(),
+		}
+		c.Body.Storage.Value = src.Output()
+		c.Body.Storage.Representation = "storage"
+		c.Space.Key = space // should be taken from repo config
+		c.Version.Number = 1
+
+		if c.ID == "" {
+			var resp []byte
+			c, resp, err = wiki.CreateContent(c)
+			if err != nil {
+				// confluence does not support duplicate title in a space
+				return "", errors.New(string(resp))
+			}
+			id = c.ID
+			// create
+			// set content id
+			err = src.SetID(id)
+			if err != nil {
+				return
+			}
+		} else {
 			cur, err := wiki.GetContent(c.ID, []string{"version"})
 			if err != nil {
 				return "", err
@@ -91,7 +84,6 @@ func Publish(file string, dryRun bool) (id string, err error) {
 
 			id = c.ID
 		}
-
 	}
 
 	return
