@@ -1,4 +1,4 @@
-package dox
+package source
 
 import (
 	"bufio"
@@ -6,21 +6,10 @@ import (
 	"github.com/russross/blackfriday"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-const doxIdFmt = "dox: %s"
-
-type source interface {
-	escape(string) string
-	Parse(string) error
-	ID() string
-	SetID(string) error
-	Title() string
-	Output() string
-}
-
-// start markdown.go
 type markdown struct {
 	filename string
 	id       string
@@ -28,18 +17,60 @@ type markdown struct {
 	data     []byte
 }
 
-func NewSource(filename string) (s source, err error) {
-	s = &markdown{}
-	err = s.Parse(filename)
+func (m *markdown) Extensions() []string {
+	return []string{".md"}
+}
 
-	return
+func (m *markdown) Matches(filename string) bool {
+	for _, e := range m.Extensions() {
+		if filepath.Ext(filename) == e {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (m *markdown) ID() string {
+	return m.id
+}
+
+func (m *markdown) SetID(ID string) (err error) {
+	buf, err := ioutil.ReadFile(m.filename)
+	if err != nil {
+		return
+	}
+
+	f, err := os.Create(m.filename)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	fmt.Fprintf(f, m.escape(doxIdFmt), ID)
+	_, err = f.Write(buf)
+	if err != nil {
+		return
+	}
+
+	m.id = ID
+
+	return nil
+}
+
+func (m *markdown) Title() string {
+	return m.title
+}
+
+func (m *markdown) Output() string {
+	return string(blackfriday.MarkdownCommon(m.data))
 }
 
 func (m *markdown) escape(input string) string {
 	return fmt.Sprintf("<!-- %s -->", input)
 }
 
-func (m *markdown) Parse(filename string) (err error) {
+func (m *markdown) parse(filename string) (err error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return
@@ -100,39 +131,4 @@ func (m *markdown) Parse(filename string) (err error) {
 	m.data = append(m.data, rest...)
 
 	return
-}
-
-func (m *markdown) ID() string {
-	return m.id
-}
-
-func (m *markdown) SetID(ID string) (err error) {
-	buf, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return
-	}
-
-	f, err := os.Create(m.filename)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	fmt.Fprintf(f, m.escape(doxIdFmt), ID)
-	_, err = f.Write(buf)
-	if err != nil {
-		return
-	}
-
-	m.id = ID
-
-	return nil
-}
-
-func (m *markdown) Title() string {
-	return m.title
-}
-
-func (m *markdown) Output() string {
-	return string(blackfriday.MarkdownCommon(m.data))
 }

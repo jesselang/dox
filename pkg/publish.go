@@ -2,6 +2,7 @@ package dox
 
 import (
 	"errors"
+	"github.com/jesselang/dox/pkg/source"
 	"github.com/jesselang/go-confluence"
 	"os"
 )
@@ -38,7 +39,7 @@ func Publish(file string, dryRun bool) (id string, err error) {
 		return
 	}
 
-	src, err := NewSource(file)
+	src, err := source.New(file)
 	if err != nil {
 		return
 	}

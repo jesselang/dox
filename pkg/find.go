@@ -1,11 +1,10 @@
 package dox
 
 import (
+	"github.com/jesselang/dox/pkg/source"
 	"os"
 	"path/filepath"
 )
-
-var supported = []string{".md"}
 
 var fileArray [64]string
 var fileList []string
@@ -25,7 +24,7 @@ func walk(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 
-	for _, v := range supported {
+	for _, v := range source.Extensions() {
 		if filepath.Ext(name) == v {
 			fileList = append(fileList, path)
 		}
