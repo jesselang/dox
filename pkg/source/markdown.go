@@ -14,6 +14,7 @@ import (
 
 type markdown struct {
 	filename string
+	opts     Opts
 	id       string
 	title    string
 	data     []byte
@@ -69,14 +70,20 @@ func (m *markdown) Title() string {
 }
 
 func (m *markdown) Output() string {
-	return string(blackfriday.MarkdownCommon(m.data))
+	s := string(blackfriday.MarkdownCommon(m.data))
+
+	if m.opts.TrimSpace {
+		s = strings.TrimSpace(s)
+	}
+
+	return s
 }
 
 func (m *markdown) escape(input string) string {
 	return fmt.Sprintf("<!-- %s -->", input)
 }
 
-func (m *markdown) parse(filename string) (err error) {
+func (m *markdown) parse(filename string, opts Opts) (err error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return
@@ -84,6 +91,7 @@ func (m *markdown) parse(filename string) (err error) {
 	defer f.Close()
 
 	m.filename = filename
+	m.opts = opts
 
 	r := bufio.NewReader(f)
 
@@ -113,15 +121,28 @@ func (m *markdown) parse(filename string) (err error) {
 			count--
 			i := strings.Index(line, "-->")
 
-			if i >= 0 {
+			if i < 0 {
+				if !opts.StripComments {
+					m.data = append(m.data, line...)
+				}
+
+				continue
+			} else {
+				if !opts.StripComments {
+					m.data = append(m.data, line[:i+3]...)
+				}
+
 				inComment = false
-				m.data = append(m.data, line[:i+3]...)
 				line = line[i+3:]
 			}
 		} else if !inComment && strings.HasPrefix(line, "<!--") {
+			if !opts.StripComments {
+				m.data = append(m.data, line...)
+			}
+
 			inComment = true
 			count--
-			m.data = append(m.data, line...)
+
 			continue
 		}
 

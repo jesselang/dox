@@ -2,9 +2,11 @@ package dox
 
 import (
 	"errors"
+	"fmt"
+	"os"
+
 	"github.com/jesselang/dox/pkg/source"
 	"github.com/jesselang/go-confluence"
-	"os"
 )
 
 func Publish(file string, dryRun bool) (id string, err error) {
@@ -39,7 +41,7 @@ func Publish(file string, dryRun bool) (id string, err error) {
 		return
 	}
 
-	src, err := source.New(file)
+	src, err := source.New(file, source.Opts{StripComments: true, TrimSpace: true})
 	if err != nil {
 		return
 	}
@@ -64,25 +66,33 @@ func Publish(file string, dryRun bool) (id string, err error) {
 				// confluence does not support duplicate title in a space
 				return "", errors.New(string(resp))
 			}
-			id = c.ID
-			// create
-			// set content id
-			err = src.SetID(id)
+
+			err = src.SetID(c.ID)
 			if err != nil {
 				return
 			}
+
+			id = c.ID
 		} else {
-			cur, err := wiki.GetContent(c.ID, []string{"version"})
+			cur, err := wiki.GetContent(
+				c.ID,
+				[]string{"body.storage", "version"})
 			if err != nil {
+				// TODO: handle 404 where dox id exists in source, but published page does not
 				return "", err
 			}
 
-			c.Version.Number = cur.Version.Number + 1
-			c, _, err = wiki.UpdateContent(c)
-			if err != nil {
-				return "", err
-			}
+			if cur.Body.Storage.Value != c.Body.Storage.Value {
+				fmt.Println(cur.Body.Storage.Value)
+				fmt.Println("-------")
+				fmt.Println(c.Body.Storage.Value)
 
+				c.Version.Number = cur.Version.Number + 1
+				c, _, err = wiki.UpdateContent(c)
+				if err != nil {
+					return "", err
+				}
+			}
 			id = c.ID
 		}
 	}

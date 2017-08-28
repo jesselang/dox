@@ -1,6 +1,15 @@
 package source
 
+import (
+	"fmt"
+)
+
 const doxIdFmt = "dox: %s"
+
+type Opts struct {
+	StripComments bool
+	TrimSpace     bool
+}
 
 type source interface {
 	Extensions() []string
@@ -11,7 +20,7 @@ type source interface {
 	Output() string
 
 	escape(string) string
-	parse(string) error
+	parse(string, Opts) error
 }
 
 func Extensions() (list []string) {
@@ -22,16 +31,19 @@ func Extensions() (list []string) {
 	return
 }
 
-func New(filename string) (s source, err error) {
+func New(filename string, opts Opts) (s source, err error) {
 	for _, s = range sourceList() {
 		if s.Matches(filename) {
-			err = s.parse(filename)
+			err = s.parse(filename, opts)
 
-			break
+			return
 		}
 	}
 
-	return
+	return nil, fmt.Errorf(
+		"%s does not match any supported extensions",
+		filename,
+	)
 }
 
 func sourceList() []source {
