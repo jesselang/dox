@@ -15,9 +15,8 @@ import (
 type markdown struct {
 	filename string
 	id       string
-	predata  []byte
 	title    string
-	postdata []byte
+	data     []byte
 }
 
 func (m *markdown) Extensions() []string {
@@ -39,6 +38,15 @@ func (m *markdown) ID() string {
 }
 
 func (m *markdown) SetID(ID string) (err error) {
+	if m.id != "" {
+		return errors.New("source already has an ID")
+	}
+
+	buf, err := ioutil.ReadFile(m.filename)
+	if err != nil {
+		return
+	}
+
 	f, err := os.Create(m.filename)
 	if err != nil {
 		return
@@ -46,9 +54,7 @@ func (m *markdown) SetID(ID string) (err error) {
 	defer f.Close()
 
 	fmt.Fprintf(f, m.escape(doxIdFmt)+"\n", ID)
-	_, err = f.Write(m.predata)
-	fmt.Fprintf(f, "# %s\n", m.title)
-	_, err = f.Write(m.postdata)
+	_, err = f.Write(buf)
 	if err != nil {
 		return
 	}
@@ -63,7 +69,7 @@ func (m *markdown) Title() string {
 }
 
 func (m *markdown) Output() string {
-	return string(blackfriday.MarkdownCommon(append(m.predata, m.postdata...)))
+	return string(blackfriday.MarkdownCommon(m.data))
 }
 
 func (m *markdown) escape(input string) string {
@@ -109,13 +115,13 @@ func (m *markdown) parse(filename string) (err error) {
 
 			if i >= 0 {
 				inComment = false
-				m.predata = append(m.predata, line[:i+3]...)
+				m.data = append(m.data, line[:i+3]...)
 				line = line[i+3:]
 			}
 		} else if !inComment && strings.HasPrefix(line, "<!--") {
 			inComment = true
 			count--
-			m.predata = append(m.predata, line...)
+			m.data = append(m.data, line...)
 			continue
 		}
 
@@ -124,7 +130,7 @@ func (m *markdown) parse(filename string) (err error) {
 
 			break
 		} else {
-			m.predata = append(m.predata, line...)
+			m.data = append(m.data, line...)
 		}
 	}
 
@@ -132,10 +138,12 @@ func (m *markdown) parse(filename string) (err error) {
 		return errors.New("title not found")
 	}
 
-	m.postdata, err = ioutil.ReadAll(r)
+	rest, err := ioutil.ReadAll(r)
 	if err != nil {
 		return
 	}
+
+	m.data = append(m.data, rest...)
 
 	return
 }
