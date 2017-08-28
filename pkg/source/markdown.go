@@ -2,19 +2,22 @@ package source
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	"github.com/russross/blackfriday"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/russross/blackfriday"
 )
 
 type markdown struct {
 	filename string
 	id       string
+	predata  []byte
 	title    string
-	data     []byte
+	postdata []byte
 }
 
 func (m *markdown) Extensions() []string {
@@ -36,19 +39,16 @@ func (m *markdown) ID() string {
 }
 
 func (m *markdown) SetID(ID string) (err error) {
-	buf, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return
-	}
-
 	f, err := os.Create(m.filename)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, m.escape(doxIdFmt), ID)
-	_, err = f.Write(buf)
+	fmt.Fprintf(f, m.escape(doxIdFmt)+"\n", ID)
+	_, err = f.Write(m.predata)
+	fmt.Fprintf(f, "# %s\n", m.title)
+	_, err = f.Write(m.postdata)
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (m *markdown) Title() string {
 }
 
 func (m *markdown) Output() string {
-	return string(blackfriday.MarkdownCommon(m.data))
+	return string(blackfriday.MarkdownCommon(append(m.predata, m.postdata...)))
 }
 
 func (m *markdown) escape(input string) string {
@@ -75,8 +75,9 @@ func (m *markdown) parse(filename string) (err error) {
 	if err != nil {
 		return
 	}
-
 	defer f.Close()
+
+	m.filename = filename
 
 	r := bufio.NewReader(f)
 
@@ -92,25 +93,29 @@ func (m *markdown) parse(filename string) (err error) {
 		if len(line) > 1 {
 			count++
 		}
-		if !doxIdFound {
+
+		if count == 1 && !doxIdFound {
 			found, err := fmt.Sscanf(line, m.escape(doxIdFmt), &m.id)
+
 			if err == nil && found > 0 {
 				doxIdFound = true
 				continue
 			}
-		} else if inComment {
+		}
+
+		if inComment {
 			count--
 			i := strings.Index(line, "-->")
 
 			if i >= 0 {
 				inComment = false
-				m.data = append(m.data, line[:i+3]...)
+				m.predata = append(m.predata, line[:i+3]...)
 				line = line[i+3:]
 			}
 		} else if !inComment && strings.HasPrefix(line, "<!--") {
 			inComment = true
 			count--
-			m.data = append(m.data, line...)
+			m.predata = append(m.predata, line...)
 			continue
 		}
 
@@ -119,16 +124,18 @@ func (m *markdown) parse(filename string) (err error) {
 
 			break
 		} else {
-			m.data = append(m.data, line...)
+			m.predata = append(m.predata, line...)
 		}
 	}
 
-	rest, err := ioutil.ReadAll(r)
+	if m.title == "" {
+		return errors.New("title not found")
+	}
+
+	m.postdata, err = ioutil.ReadAll(r)
 	if err != nil {
 		return
 	}
-
-	m.data = append(m.data, rest...)
 
 	return
 }
