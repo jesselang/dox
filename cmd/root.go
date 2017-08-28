@@ -11,6 +11,7 @@ import (
 )
 
 var dryRun bool
+var repoRoot string
 var cfgFile string
 
 // RootCmd represents the base command when called without any subcommands
@@ -26,12 +27,7 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		path, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-
-		files, err := dox.FindAll(path)
+		files, err := dox.FindAll(repoRoot)
 		if err != nil {
 			panic(err)
 		}
@@ -56,6 +52,15 @@ func Execute() {
 }
 
 func init() {
+	path, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	repoRoot, err = dox.FindRepoRoot(path)
+	if err != nil {
+		panic(err)
+	}
 
 	cobra.OnInitialize(initConfig)
 
@@ -76,10 +81,10 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	}
 
-	// TODO: specify repo path here
-	viper.SetConfigName(".dox")            // name of config file (without extension)
-	viper.AddConfigPath(os.Getenv("HOME")) // adding home directory as first search path
-	viper.AutomaticEnv()                   // read in environment variables that match
+	viper.SetConfigName(".dox")   // name of config file (without extension)
+	viper.AddConfigPath(repoRoot) // adding repo directory as first search path
+	viper.SetEnvPrefix("dox")
+	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {

@@ -7,12 +7,18 @@ import (
 
 	"github.com/jesselang/dox/pkg/source"
 	"github.com/jesselang/go-confluence"
+	"github.com/spf13/viper"
 )
 
 func Publish(file string, dryRun bool) (id string, err error) {
-	uri := os.Getenv("DOX_URI")
+	uri := viper.GetString("uri")
 	if len(uri) == 0 {
-		return id, errors.New("DOX_URI must be set")
+		return id, errors.New("uri must be set in config")
+	}
+
+	space := viper.GetString("space")
+	if len(space) == 0 {
+		return id, errors.New("space must be set in config")
 	}
 
 	username := os.Getenv("DOX_USERNAME")
@@ -22,11 +28,6 @@ func Publish(file string, dryRun bool) (id string, err error) {
 
 	password := os.Getenv("DOX_PASSWORD")
 	if len(password) == 0 {
-		return id, errors.New("DOX_PASSWORD must be set")
-	}
-
-	space := os.Getenv("DOX_SPACE")
-	if len(space) == 0 {
 		return id, errors.New("DOX_PASSWORD must be set")
 	}
 

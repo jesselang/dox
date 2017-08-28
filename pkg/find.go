@@ -1,9 +1,11 @@
 package dox
 
 import (
-	"github.com/jesselang/dox/pkg/source"
+	"errors"
 	"os"
 	"path/filepath"
+
+	"github.com/jesselang/dox/pkg/source"
 )
 
 var fileArray [64]string
@@ -35,6 +37,20 @@ func walk(path string, info os.FileInfo, err error) error {
 
 func FindAll(path string) (files []string, err error) {
 	fileList = fileArray[0:0]
+	path, err = FindRepoRoot(path)
+	if err != nil {
+		return
+	}
+	if err = filepath.Walk(path, walk); err != nil {
+		return
+	}
+
+	files = fileList
+
+	return
+}
+
+func FindRepoRoot(path string) (root string, err error) {
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return
@@ -47,12 +63,13 @@ func FindAll(path string) (files []string, err error) {
 		}
 
 		path = filepath.Dir(path)
-	}
-	if err = filepath.Walk(path, walk); err != nil {
-		return
+
+		if path == "/" || path == "." {
+			return "", errors.New("could not find repo root")
+		}
 	}
 
-	files = fileList
+	root = path
 
 	return
 }
