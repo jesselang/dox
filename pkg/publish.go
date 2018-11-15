@@ -61,11 +61,10 @@ func Publish(file string, dryRun bool) (id string, err error) {
 		c.Version.Number = 1
 
 		if c.ID == "" {
-			var resp []byte
-			c, resp, err = wiki.CreateContent(c)
+			c, err = wiki.CreateContent(c)
 			if err != nil {
 				// confluence does not support duplicate title in a space
-				return "", errors.New(string(resp))
+				return "", err
 			}
 
 			err = src.SetID(c.ID)
@@ -89,7 +88,7 @@ func Publish(file string, dryRun bool) (id string, err error) {
 				fmt.Println(c.Body.Storage.Value)
 
 				c.Version.Number = cur.Version.Number + 1
-				c, _, err = wiki.UpdateContent(c)
+				c, err = wiki.UpdateContent(c)
 				if err != nil {
 					return "", err
 				}

@@ -70,7 +70,7 @@ func (m *markdown) Title() string {
 }
 
 func (m *markdown) Output() string {
-	s := string(blackfriday.MarkdownCommon(m.data))
+	s := string(blackfriday.Run(m.data))
 
 	if m.opts.TrimSpace {
 		s = strings.TrimSpace(s)
