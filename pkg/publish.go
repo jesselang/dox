@@ -47,58 +47,53 @@ func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 		return
 	}
 
+	var c *confluence.Content
 	if dryRun {
-		id = src.ID()
-	} else {
-
-		c := &confluence.Content{
+		return src.ID(), nil
+	} else if src.ID() == "" {
+		// NEW
+		c = &confluence.Content{
 			ID:    src.ID(),
 			Type:  "page",
 			Title: src.Title(),
 		}
 
+		if rootID != "" {
+			c.Ancestors = []confluence.ContentAncestor{{ID: rootID}}
+		}
 		c.Body.Storage.Value = src.Output()
 		c.Body.Storage.Representation = "storage"
 		c.Space.Key = space
 		c.Version.Number = 1
 
-		if c.ID == "" {
-			if rootID != "" {
-				c.Ancestors = []confluence.ContentAncestor{{ID: rootID}}
-			}
+		c, err = wiki.CreateContent(c)
+		if err != nil {
+			// TODO: confluence does not support duplicate title in a space
+			return "", err
+		}
 
-			c, err = wiki.CreateContent(c)
+		err = src.SetID(c.ID)
+		if err != nil {
+			return "", err
+		}
+
+	} else {
+		c, err = wiki.GetContent(src.ID(),
+			[]string{"body.storage", "space", "version"})
+		if err != nil {
+			// TODO: handle 404 where dox id exists in source, but published page does not
+			return "", err
+		}
+
+		if c.Body.Storage.Value != src.Output() {
+			c.Body.Storage.Value = src.Output()
+			c.Version.Number += 1
+
+			c, err = wiki.UpdateContent(c)
 			if err != nil {
-				// TODO: confluence does not support duplicate title in a space
 				return "", err
 			}
-
-			err = src.SetID(c.ID)
-			if err != nil {
-				return
-			}
-
-			id = c.ID
-		} else {
-			cur, err := wiki.GetContent(
-				c.ID,
-				[]string{"body.storage", "version"})
-			if err != nil {
-				// TODO: handle 404 where dox id exists in source, but published page does not
-				return "", err
-			}
-
-			if cur.Body.Storage.Value != c.Body.Storage.Value {
-				c.Ancestors = cur.Ancestors
-				c.Version.Number = cur.Version.Number + 1
-				c, err = wiki.UpdateContent(c)
-				if err != nil {
-					return "", err
-				}
-			}
-			id = c.ID
 		}
 	}
-
-	return
+	return c.ID, nil
 }
