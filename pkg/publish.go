@@ -2,15 +2,15 @@ package dox
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
-	"github.com/jesselang/dox/pkg/source"
 	"github.com/jesselang/go-confluence"
 	"github.com/spf13/viper"
+
+	"github.com/jesselang/dox/pkg/source"
 )
 
-func Publish(file string, dryRun bool) (id string, err error) {
+func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 	uri := viper.GetString("uri")
 	if len(uri) == 0 {
 		return id, errors.New("uri must be set in config")
@@ -47,55 +47,53 @@ func Publish(file string, dryRun bool) (id string, err error) {
 		return
 	}
 
+	var c *confluence.Content
 	if dryRun {
-		id = src.ID()
-	} else {
-		c := &confluence.Content{
+		return src.ID(), nil
+	} else if src.ID() == "" {
+		// NEW
+		c = &confluence.Content{
 			ID:    src.ID(),
 			Type:  "page",
 			Title: src.Title(),
 		}
+
+		if rootID != "" {
+			c.Ancestors = []confluence.ContentAncestor{{ID: rootID}}
+		}
 		c.Body.Storage.Value = src.Output()
 		c.Body.Storage.Representation = "storage"
-		c.Space.Key = space // should be taken from repo config
+		c.Space.Key = space
 		c.Version.Number = 1
 
-		if c.ID == "" {
-			c, err = wiki.CreateContent(c)
+		c, err = wiki.CreateContent(c)
+		if err != nil {
+			// TODO: confluence does not support duplicate title in a space
+			return "", err
+		}
+
+		err = src.SetID(c.ID)
+		if err != nil {
+			return "", err
+		}
+
+	} else {
+		c, err = wiki.GetContent(src.ID(),
+			[]string{"body.storage", "space", "version"})
+		if err != nil {
+			// TODO: handle 404 where dox id exists in source, but published page does not
+			return "", err
+		}
+
+		if c.Body.Storage.Value != src.Output() {
+			c.Body.Storage.Value = src.Output()
+			c.Version.Number += 1
+
+			c, err = wiki.UpdateContent(c)
 			if err != nil {
-				// confluence does not support duplicate title in a space
 				return "", err
 			}
-
-			err = src.SetID(c.ID)
-			if err != nil {
-				return
-			}
-
-			id = c.ID
-		} else {
-			cur, err := wiki.GetContent(
-				c.ID,
-				[]string{"body.storage", "version"})
-			if err != nil {
-				// TODO: handle 404 where dox id exists in source, but published page does not
-				return "", err
-			}
-
-			if cur.Body.Storage.Value != c.Body.Storage.Value {
-				fmt.Println(cur.Body.Storage.Value)
-				fmt.Println("-------")
-				fmt.Println(c.Body.Storage.Value)
-
-				c.Version.Number = cur.Version.Number + 1
-				c, err = wiki.UpdateContent(c)
-				if err != nil {
-					return "", err
-				}
-			}
-			id = c.ID
 		}
 	}
-
-	return
+	return c.ID, nil
 }
