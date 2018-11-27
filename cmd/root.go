@@ -11,8 +11,9 @@ import (
 )
 
 var dryRun bool
-var repoRoot string
 var cfgFile string
+var repoRoot string
+var verbose bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -29,15 +30,19 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		files, err := dox.FindAll(repoRoot)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			os.Exit(1)
 		}
 
 		for _, v := range files {
 			id, err := dox.Publish(v, dryRun)
 			if err != nil {
-				panic(err)
+				fmt.Fprintf(os.Stderr, "error: %s\n", err)
+				os.Exit(1)
 			}
-			fmt.Printf("%s published to %s\n", v, id)
+			if verbose {
+				fmt.Printf("%s published to %s\n", v, id)
+			}
 		}
 	},
 }
@@ -69,7 +74,8 @@ func init() {
 	// will be global for your application.
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.dox.yaml)")
-	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "n", false, "Just say, don't do")
+	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "n", false, "Dry-run mode")
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Be verbose")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
