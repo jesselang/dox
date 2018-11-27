@@ -19,7 +19,6 @@ type source interface {
 	Title() string
 	Output() string
 
-	escape(string) string
 	parse(string, Opts) error
 }
 
@@ -47,5 +46,5 @@ func New(filename string, opts Opts) (s source, err error) {
 }
 
 func sourceList() []source {
-	return []source{&markdown{}}
+	return []source{&markdown{}, &root{}}
 }

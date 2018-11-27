@@ -34,8 +34,17 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
+		root, err := dox.Publish("", "", dryRun) // generated root page
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			os.Exit(1)
+		}
+		if verbose {
+			fmt.Printf("root published to %s\n", root)
+		}
+
 		for _, v := range files {
-			id, err := dox.Publish(v, dryRun)
+			id, err := dox.Publish(v, root, dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error: %s\n", err)
 				os.Exit(1)

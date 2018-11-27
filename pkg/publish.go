@@ -2,15 +2,15 @@ package dox
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
-	"github.com/jesselang/dox/pkg/source"
 	"github.com/jesselang/go-confluence"
 	"github.com/spf13/viper"
+
+	"github.com/jesselang/dox/pkg/source"
 )
 
-func Publish(file string, dryRun bool) (id string, err error) {
+func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 	uri := viper.GetString("uri")
 	if len(uri) == 0 {
 		return id, errors.New("uri must be set in config")
@@ -50,20 +50,26 @@ func Publish(file string, dryRun bool) (id string, err error) {
 	if dryRun {
 		id = src.ID()
 	} else {
+
 		c := &confluence.Content{
 			ID:    src.ID(),
 			Type:  "page",
 			Title: src.Title(),
 		}
+
 		c.Body.Storage.Value = src.Output()
 		c.Body.Storage.Representation = "storage"
-		c.Space.Key = space // should be taken from repo config
+		c.Space.Key = space
 		c.Version.Number = 1
 
 		if c.ID == "" {
+			if rootID != "" {
+				c.Ancestors = []confluence.ContentAncestor{{ID: rootID}}
+			}
+
 			c, err = wiki.CreateContent(c)
 			if err != nil {
-				// confluence does not support duplicate title in a space
+				// TODO: confluence does not support duplicate title in a space
 				return "", err
 			}
 
@@ -83,10 +89,7 @@ func Publish(file string, dryRun bool) (id string, err error) {
 			}
 
 			if cur.Body.Storage.Value != c.Body.Storage.Value {
-				fmt.Println(cur.Body.Storage.Value)
-				fmt.Println("-------")
-				fmt.Println(c.Body.Storage.Value)
-
+				c.Ancestors = cur.Ancestors
 				c.Version.Number = cur.Version.Number + 1
 				c, err = wiki.UpdateContent(c)
 				if err != nil {
