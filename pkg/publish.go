@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -82,7 +84,11 @@ func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 			return "", err
 		}
 
-		imageSrcFiles := GetImageSrcFiles(c.Body.Storage.Value, file)
+		imageSrcFiles, err := GetImageSrcFiles(c.Body.Storage.Value, file)
+		if err != nil {
+			return "", err
+		}
+
 		if len(imageSrcFiles) != 0 {
 			c.Body.Storage.Value, err = ReplaceImagesWithAttachments(imageSrcFiles, file, c.Body.Storage.Value, c.ID, wiki, uri)
 			if err != nil {
@@ -97,7 +103,7 @@ func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 		}
 
 	} else {
-		newPageContent := src.Output()
+		sourceOutput := src.Output()
 
 		c, err = wiki.GetContent(src.ID(),
 			[]string{"body.storage", "space", "version"})
@@ -106,14 +112,18 @@ func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 			return "", err
 		}
 
-		imageSrcFiles := GetImageSrcFiles(newPageContent, file)
-		newPageContent, err = ReplaceImagesWithAttachments(imageSrcFiles, file, newPageContent, c.ID, wiki, uri)
+		imageSrcFiles, err := GetImageSrcFiles(sourceOutput, file)
 		if err != nil {
 			return "", err
 		}
 
-		if c.Body.Storage.Value != newPageContent {
-			c.Body.Storage.Value = newPageContent
+		pageContent, err := ReplaceImagesWithAttachments(imageSrcFiles, file, sourceOutput, c.ID, wiki, uri)
+		if err != nil {
+			return "", err
+		}
+
+		if c.Body.Storage.Value != pageContent {
+			c.Body.Storage.Value = pageContent
 			c.Version.Number += 1
 
 			c, err = wiki.UpdateContent(c)
@@ -125,18 +135,23 @@ func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 	return c.ID, nil
 }
 
-func GetImageSrcsFromHTML(content string) []string {
+func GetImageSrcsFromHTML(content string) ([]string, error) {
 	var imageSrcs []string
 	z := html.NewTokenizer(strings.NewReader(content))
 	for {
-		tt := z.Next()
-		t := z.Token()
-		switch tt {
+		tokenType := z.Next()
+		token := z.Token()
+
+		switch tokenType {
 		case html.ErrorToken:
-			return imageSrcs
+			if z.Err() != io.EOF {
+				return nil, z.Err()
+			} else {
+				return imageSrcs, nil
+			}
 		case html.SelfClosingTagToken:
-			if t.Data == "img" {
-				for _, attr := range t.Attr {
+			if token.Data == "img" {
+				for _, attr := range token.Attr {
 					if attr.Key == "src" {
 						imageSrcs = append(imageSrcs, attr.Val)
 					}
@@ -144,23 +159,33 @@ func GetImageSrcsFromHTML(content string) []string {
 			}
 		}
 	}
-	return imageSrcs
+	return imageSrcs, nil
 }
 
-func GetImageSrcFiles(content string, file string) []string {
+func GetImageSrcFiles(content string, file string) ([]string, error) {
 	fileDir := filepath.Dir(file)
-	imageSrcs := GetImageSrcsFromHTML(content)
+	imageSrcs, err := GetImageSrcsFromHTML(content)
+	if err != nil {
+		return nil, err
+	}
 
 	var imageSrcFiles []string
 
 	for _, imageSrc := range imageSrcs {
+		// skip imageSrcs that are URLs
+		if _, err := url.ParseRequestURI(imageSrc); err == nil {
+			continue
+		}
+
 		imageSrcPath := filepath.Join(fileDir, imageSrc)
 		if _, err := os.Stat(imageSrcPath); !os.IsNotExist(err) {
 			imageSrcFiles = append(imageSrcFiles, imageSrc)
+		} else {
+			fmt.Printf("warn: could not find image file %s\n", imageSrcPath)
 		}
 	}
 
-	return imageSrcFiles
+	return imageSrcFiles, nil
 }
 
 func ReplaceImagesWithAttachments(imageSrcFiles []string, file string, pageContent string, pageID string, wiki *confluence.Wiki, uri string) (string, error) {
@@ -201,7 +226,7 @@ func ReplaceImagesWithAttachments(imageSrcFiles []string, file string, pageConte
 			}
 		}
 
-		pageContent = strings.Replace(pageContent, "\"" + imageSrcFile + "\"", "\"" + uri + "/download/attachments/" + pageID + "/" + imageSrcFilename + "\"", -1)
+		pageContent = strings.Replace(pageContent, fmt.Sprintf(`"%s"`, imageSrcFile), fmt.Sprintf(`"%s/download/attachments/%s/%s"`, uri, pageID, imageSrcFilename), -1)
 	}
 
 	return pageContent, nil
