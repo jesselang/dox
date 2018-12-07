@@ -135,7 +135,7 @@ func Publish(file string, rootID string, dryRun bool) (id string, err error) {
 	return c.ID, nil
 }
 
-func GetImageSrcsFromHTML(content string) ([]string, error) {
+func getImageSrcsFromHTML(content string) ([]string, error) {
 	var imageSrcs []string
 	z := html.NewTokenizer(strings.NewReader(content))
 	for {
@@ -162,7 +162,7 @@ func GetImageSrcsFromHTML(content string) ([]string, error) {
 	return imageSrcs, nil
 }
 
-func GetImageSrcFiles(content string, file string) ([]string, error) {
+func getImageSrcFiles(content string, file string) ([]string, error) {
 	fileDir := filepath.Dir(file)
 	imageSrcs, err := GetImageSrcsFromHTML(content)
 	if err != nil {
@@ -188,7 +188,7 @@ func GetImageSrcFiles(content string, file string) ([]string, error) {
 	return imageSrcFiles, nil
 }
 
-func ReplaceImagesWithAttachments(imageSrcFiles []string, file string, pageContent string, pageID string, wiki *confluence.Wiki, uri string) (string, error) {
+func replaceImagesWithAttachments(imageSrcFiles []string, file string, pageContent string, pageID string, wiki *confluence.Wiki, uri string) (string, error) {
 	for _, imageSrcFile := range imageSrcFiles {
 		fileDir := filepath.Dir(file)
 		imageSrcPath := filepath.Join(fileDir, imageSrcFile)
