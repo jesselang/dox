@@ -35,7 +35,6 @@ updated to include the page_id of the generated root page. Be sure to commit
 ## Not supported
 
 - Relative links
-- Media files
 
 ## Roadmap
 
