@@ -42,7 +42,7 @@ func getImageSrcsFromHTML(content string) ([]string, error) {
 	return imageSrcs, nil
 }
 
-func GetImageSrcFiles(content string, file string) ([]string, error) {
+func getImageSrcFiles(content string, file string) ([]string, error) {
 	fileDir := filepath.Dir(file)
 	imageSrcs, err := getImageSrcsFromHTML(content)
 	if err != nil {
@@ -68,7 +68,7 @@ func GetImageSrcFiles(content string, file string) ([]string, error) {
 	return imageSrcFiles, nil
 }
 
-func ReplaceImagesWithAttachments(imageSrcFiles []string, file string, pageContent string, pageID string, wiki *confluence.Wiki, uri string) (string, error) {
+func replaceImagesWithAttachments(imageSrcFiles []string, file string, pageContent string, pageID string, wiki *confluence.Wiki, uri string) (string, error) {
 	fileDir := filepath.Dir(file)
 	for _, imageSrcFile := range imageSrcFiles {
 		imageSrcPath := filepath.Join(fileDir, imageSrcFile)

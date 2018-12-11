@@ -81,13 +81,13 @@ func Publish(file string, rootID string, repoRoot string, dryRun bool) (id strin
 			return "", err
 		}
 
-		imageSrcFiles, err := GetImageSrcFiles(c.Body.Storage.Value, file)
+		imageSrcFiles, err := getImageSrcFiles(c.Body.Storage.Value, file)
 		if err != nil {
 			return "", err
 		}
 
 		if len(imageSrcFiles) != 0 {
-			c.Body.Storage.Value, err = ReplaceImagesWithAttachments(imageSrcFiles, file, c.Body.Storage.Value, c.ID, wiki, uri)
+			c.Body.Storage.Value, err = replaceImagesWithAttachments(imageSrcFiles, file, c.Body.Storage.Value, c.ID, wiki, uri)
 			if err != nil {
 				return "", err
 			}
@@ -109,17 +109,17 @@ func Publish(file string, rootID string, repoRoot string, dryRun bool) (id strin
 			return "", err
 		}
 
-		imageSrcFiles, err := GetImageSrcFiles(sourceOutput, file)
+		imageSrcFiles, err := getImageSrcFiles(sourceOutput, file)
 		if err != nil {
 			return "", err
 		}
 
-		pageContent, err := ReplaceImagesWithAttachments(imageSrcFiles, file, sourceOutput, c.ID, wiki, uri)
+		pageContent, err := replaceImagesWithAttachments(imageSrcFiles, file, sourceOutput, c.ID, wiki, uri)
 		if err != nil {
 			return "", err
 		}
 
-		pageContent, err = ReplaceRelativeLinks(file, pageContent, uri, repoBrowseURL, repoRoot)
+		pageContent, err = replaceRelativeLinks(file, pageContent, uri, repoBrowseURL, repoRoot)
 		if err != nil {
 			return "", err
 		}

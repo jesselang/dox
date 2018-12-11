@@ -65,7 +65,7 @@ func getLocalLinkedAnchors(content string, file string) ([]string, error) {
 	return localAnchorHrefs, nil
 }
 
-func ReplaceRelativeLinks(file string, pageContent string, uri string, repoBrowseURL string, repoRoot string) (string, error) {
+func replaceRelativeLinks(file string, pageContent string, uri string, repoBrowseURL string, repoRoot string) (string, error) {
 	localAnchorHrefs, err := getLocalLinkedAnchors(pageContent, file)
 	if err != nil {
 		return "", err
