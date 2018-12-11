@@ -34,7 +34,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		root, err := dox.Publish("", "", dryRun) // generated root page
+		root, err := dox.Publish("", "", repoRoot, dryRun) // generated root page
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			os.Exit(1)
@@ -44,7 +44,18 @@ to quickly create a Cobra application.`,
 		}
 
 		for _, v := range files {
-			id, err := dox.Publish(v, root, dryRun)
+			_, err := dox.Publish(v, root, repoRoot, dryRun)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %s\n", err)
+				os.Exit(1)
+			}
+		}
+
+		// ham-fisted approach to ensuring that all relative links are linked
+		// correctly, first pass above cannot guarantee that all pages were
+		// already created when executed
+		for _, v := range files {
+			id, err := dox.Publish(v, root, repoRoot, dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error: %s\n", err)
 				os.Exit(1)

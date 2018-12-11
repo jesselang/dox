@@ -32,14 +32,11 @@ Each markdown file will be modified with a dox header, and `.dox.yaml` will be
 updated to include the page_id of the generated root page. Be sure to commit
 `.dox.yaml` and these changes to markdown in your source code management.
 
-## Not supported
-
-- Relative links
+<!-- ## Not supported -->
 
 ## Roadmap
 
 - Improve [go-confluence][go-confluence] error handling
-- Relative links
 - Media files
 - `dox update` updates already published files without source modifications
 - `dox init` to create initial config
