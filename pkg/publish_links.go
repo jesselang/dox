@@ -65,7 +65,14 @@ func getLocalLinkedAnchors(content string, file string) ([]string, error) {
 	return localAnchorHrefs, nil
 }
 
-func replaceRelativeLinks(file string, pageContent string, uri string, repoBrowseURL string, repoRoot string) (string, error) {
+func replaceRelativeLinks(file string, pageContent string, uri string, browseUrlBase string, repoRoot string) (string, error) {
+	if !strings.Contains(browseUrlBase, "%s") {
+		if !strings.HasSuffix(browseUrlBase, "/") {
+			browseUrlBase += "/"
+		}
+		browseUrlBase += "%s"
+	}
+
 	localAnchorHrefs, err := getLocalLinkedAnchors(pageContent, file)
 	if err != nil {
 		return "", err
@@ -80,8 +87,8 @@ func replaceRelativeLinks(file string, pageContent string, uri string, repoBrows
 			// file exists but is not a dox source file, link to source instead
 			localAnchorHrefFromRepoRoot := strings.Replace(localAnchorHrefPath, repoRoot, "", -1)
 			localAnchorHrefFromRepoRoot = strings.TrimPrefix(localAnchorHrefFromRepoRoot, "/")
-			pageContent = strings.Replace(pageContent, fmt.Sprintf(`href="%s"`, localAnchorHref), fmt.Sprintf(`href="%s/%s"`, repoBrowseURL, localAnchorHrefFromRepoRoot), -1)
-			continue
+			sourceUrl := fmt.Sprintf(browseUrlBase, localAnchorHrefFromRepoRoot)
+			pageContent = strings.Replace(pageContent, fmt.Sprintf(`href="%s"`, localAnchorHref), fmt.Sprintf(`href="%s"`, sourceUrl), -1)
 		} else if src.ID() != "" {
 			pageContent = strings.Replace(pageContent, fmt.Sprintf(`href="%s"`, localAnchorHref), fmt.Sprintf(`href="%s"`, confluenceUrlForPageID(uri, src.ID())), -1)
 		}

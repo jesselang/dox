@@ -20,9 +20,9 @@ func Publish(file string, rootID string, repoRoot string, dryRun bool) (id strin
 		return id, errors.New("space must be set in config")
 	}
 
-	repoBrowseURL := viper.GetString("repo_browse_url")
-	if len(repoBrowseURL) == 0 {
-		return id, errors.New("repo_browse_url must be set in config")
+	browseUrlBase := viper.GetString("browse_url_base")
+	if len(browseUrlBase) == 0 {
+		return id, errors.New("browse_url_base must be set in config")
 	}
 
 	username := os.Getenv("DOX_USERNAME")
@@ -119,7 +119,7 @@ func Publish(file string, rootID string, repoRoot string, dryRun bool) (id strin
 			return "", err
 		}
 
-		pageContent, err = replaceRelativeLinks(file, pageContent, uri, repoBrowseURL, repoRoot)
+		pageContent, err = replaceRelativeLinks(file, pageContent, uri, browseUrlBase, repoRoot)
 		if err != nil {
 			return "", err
 		}
