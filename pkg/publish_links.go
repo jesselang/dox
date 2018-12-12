@@ -66,6 +66,8 @@ func getLocalLinkedAnchors(content string, file string) ([]string, error) {
 }
 
 func replaceRelativeLinks(file string, pageContent string, uri string, browseUrlBase string, repoRoot string) (string, error) {
+	// The user can supply a string verb for formatting. If the verb is not
+	// present, append it to the end of the URL
 	if !strings.Contains(browseUrlBase, "%s") {
 		if !strings.HasSuffix(browseUrlBase, "/") {
 			browseUrlBase += "/"
