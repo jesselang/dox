@@ -34,28 +34,32 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		root, err := dox.Publish("", "", repoRoot, dryRun) // generated root page
+		_, err = dox.PrePublish("", "", dryRun) // generate blank root page
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			os.Exit(1)
 		}
+
+		root, err := dox.Publish("", "", dryRun) // generate populated root page
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			os.Exit(1)
+		}
+
 		if verbose {
 			fmt.Printf("root published to %s\n", root)
 		}
 
 		for _, v := range files {
-			_, err := dox.Publish(v, root, repoRoot, dryRun)
+			_, err := dox.PrePublish(v, root, dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error: %s\n", err)
 				os.Exit(1)
 			}
 		}
 
-		// ham-fisted approach to ensuring that all relative links are linked
-		// correctly, first pass above cannot guarantee that all pages were
-		// already created when executed
 		for _, v := range files {
-			id, err := dox.Publish(v, root, repoRoot, dryRun)
+			id, err := dox.Publish(v, repoRoot, dryRun)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error: %s\n", err)
 				os.Exit(1)
