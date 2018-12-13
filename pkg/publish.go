@@ -67,6 +67,10 @@ func PrePublish(file string, rootID string, dryRun bool) (id string, err error) 
 		return
 	}
 
+	if src.Ignore() {
+		return
+	}
+
 	if dryRun || src.ID() != "" {
 		return src.ID(), nil
 	}
@@ -120,6 +124,10 @@ func Publish(file string, repoRoot string, dryRun bool) (id string, err error) {
 
 	src, err := source.New(file, source.Opts{StripComments: true, TrimSpace: true})
 	if err != nil {
+		return
+	}
+
+	if src.Ignore() {
 		return
 	}
 

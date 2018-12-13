@@ -53,6 +53,10 @@ func (r *root) Output() string {
 	return rootContent
 }
 
+func (r *root) Ignore() bool {
+	return false
+}
+
 func (r *root) parse(filename string, opts Opts) (err error) {
 	return nil
 }
