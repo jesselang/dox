@@ -33,6 +33,14 @@ Each markdown file will be modified with a dox header, and `.dox.yaml` will be
 updated to include the page_id of the generated root page. Be sure to commit
 `.dox.yaml` and these changes to markdown in your source code management.
 
+### Ignored Files
+
+If a file should not be published, add the ignore directive to the top of the file:
+
+```
+<!-- dox: ignore -->
+```
+
 ### Relative Linking
 
 Websites like github allow markdown files to relatively link to other files in

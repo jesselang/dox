@@ -5,6 +5,7 @@ import (
 )
 
 const doxIdFmt = "dox: %s"
+const doxIgnore = "dox: ignore"
 
 type Opts struct {
 	StripComments bool
@@ -18,6 +19,7 @@ type source interface {
 	SetID(string) error
 	Title() string
 	Output() string
+	Ignore() bool
 
 	parse(string, Opts) error
 }

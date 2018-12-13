@@ -18,6 +18,7 @@ type markdown struct {
 	id       string
 	title    string
 	data     []byte
+	ignore   bool
 }
 
 func (m *markdown) Extensions() []string {
@@ -79,6 +80,10 @@ func (m *markdown) Output() string {
 	return s
 }
 
+func (m *markdown) Ignore() bool {
+	return m.ignore
+}
+
 func (m *markdown) escape(input string) string {
 	return fmt.Sprintf("<!-- %s -->", input)
 }
@@ -106,6 +111,11 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 		}
 		if len(line) > 1 {
 			count++
+		}
+
+		if strings.Contains(line, m.escape(doxIgnore)) {
+			m.ignore = true
+			return
 		}
 
 		if count == 1 && !doxIdFound {
