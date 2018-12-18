@@ -12,13 +12,23 @@ import (
 	"github.com/russross/blackfriday"
 )
 
+const confluenceEditNotice = `<p>
+  <ac:structured-macro ac:name="info" ac:schema-version="1">
+    <ac:parameter ac:name="title">This page was published by dox</ac:parameter>
+    <ac:rich-text-body>
+      <p>Changes made to this page directly will be overwritten. This page was generated from <a href="%s">source</a>.</p>
+    </ac:rich-text-body>
+  </ac:structured-macro>
+</p>`
+
 type markdown struct {
-	filename string
-	opts     Opts
-	id       string
-	title    string
-	data     []byte
-	ignore   bool
+	filename   string
+	opts       Opts
+	id         string
+	title      string
+	data       []byte
+	ignore     bool
+	omitNotice bool
 }
 
 func (m *markdown) Extensions() []string {
@@ -77,6 +87,10 @@ func (m *markdown) Output() string {
 		s = strings.TrimSpace(s)
 	}
 
+	if !m.omitNotice {
+		s = fmt.Sprintf(confluenceEditNotice, m.opts.DoxNoticeFileUrl) + s
+	}
+
 	return s
 }
 
@@ -101,10 +115,11 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 	r := bufio.NewReader(f)
 
 	doxIdFound := false
+	doxOmitNoticeFound := false
 	inComment := false
 	var line string
 	count := 0
-	for count < 2 {
+	for count < 3 {
 		line, err = r.ReadString('\n')
 		if err != nil {
 			return
@@ -118,7 +133,16 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 			return
 		}
 
-		if count == 1 && !doxIdFound {
+		if !doxOmitNoticeFound {
+			if strings.Contains(line, m.escape(doxOmitNotice)) {
+				m.omitNotice = true
+				doxOmitNoticeFound = true
+				continue
+			}
+		}
+
+		// since ID check scans input, check for it last
+		if !doxIdFound {
 			found, err := fmt.Sscanf(line, m.escape(doxIdFmt), &m.id)
 
 			if err == nil && found > 0 {

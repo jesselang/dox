@@ -66,14 +66,6 @@ func getLocalLinkedAnchors(content string, file string) ([]string, error) {
 }
 
 func replaceRelativeLinks(file string, pageContent string, uri string, browseUrlBase string, repoRoot string) (string, error) {
-	// The user can supply a string verb for formatting. If the verb is not
-	// present, append it to the end of the URL
-	if !strings.Contains(browseUrlBase, "%s") {
-		if !strings.HasSuffix(browseUrlBase, "/") {
-			browseUrlBase += "/"
-		}
-		browseUrlBase += "%s"
-	}
 
 	localAnchorHrefs, err := getLocalLinkedAnchors(pageContent, file)
 	if err != nil {
@@ -85,11 +77,10 @@ func replaceRelativeLinks(file string, pageContent string, uri string, browseUrl
 		localAnchorHrefPath := filepath.Join(fileDir, localAnchorHref)
 
 		src, err := source.New(localAnchorHrefPath, source.Opts{StripComments: true, TrimSpace: true})
-		if err != nil {
-			// file exists but is not a dox source file, link to source instead
-			localAnchorHrefFromRepoRoot := strings.Replace(localAnchorHrefPath, repoRoot, "", -1)
-			localAnchorHrefFromRepoRoot = strings.TrimPrefix(localAnchorHrefFromRepoRoot, "/")
-			sourceUrl := fmt.Sprintf(browseUrlBase, localAnchorHrefFromRepoRoot)
+		if err != nil || src.Ignore() {
+			// file exists but is not a dox source file or is a source file but
+			// is ignored, so link to source instead
+			sourceUrl := fileBrowseUrl(browseUrlBase, repoRoot, localAnchorHrefPath)
 			pageContent = strings.Replace(pageContent, fmt.Sprintf(`href="%s"`, localAnchorHref), fmt.Sprintf(`href="%s"`, sourceUrl), -1)
 		} else if src.ID() != "" {
 			pageContent = strings.Replace(pageContent, fmt.Sprintf(`href="%s"`, localAnchorHref), fmt.Sprintf(`href="%s"`, confluenceUrlForPageID(uri, src.ID())), -1)
@@ -101,4 +92,19 @@ func replaceRelativeLinks(file string, pageContent string, uri string, browseUrl
 
 func confluenceUrlForPageID(uri, pageID string) string {
 	return fmt.Sprintf("%s/pages/viewpage.action?pageId=%s", uri, pageID)
+}
+
+func fileBrowseUrl(browseUrlBase string, repoRoot string, filepath string) string {
+	// The user can supply a string verb for formatting. If the verb is not
+	// present, append it to the end of the URL
+	if !strings.Contains(browseUrlBase, "%s") {
+		if !strings.HasSuffix(browseUrlBase, "/") {
+			browseUrlBase += "/"
+		}
+		browseUrlBase += "%s"
+	}
+
+	p := strings.Replace(filepath, repoRoot, "", -1)
+	p = strings.TrimPrefix(p, "/")
+	return fmt.Sprintf(browseUrlBase, p)
 }
