@@ -122,7 +122,11 @@ func Publish(file string, repoRoot string, dryRun bool) (id string, err error) {
 		return
 	}
 
-	src, err := source.New(file, source.Opts{StripComments: true, TrimSpace: true})
+	src, err := source.New(file, source.Opts{
+		StripComments: true,
+		TrimSpace: true,
+		DoxNoticeFileUrl: fileBrowseUrl(browseUrlBase, repoRoot, file),
+	})
 	if err != nil {
 		return
 	}

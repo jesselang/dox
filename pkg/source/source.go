@@ -6,10 +6,12 @@ import (
 
 const doxIdFmt = "dox: %s"
 const doxIgnore = "dox: ignore"
+const doxOmitNotice = "dox: omit-notice"
 
 type Opts struct {
-	StripComments bool
-	TrimSpace     bool
+	StripComments    bool
+	TrimSpace        bool
+	DoxNoticeFileUrl string
 }
 
 type source interface {
