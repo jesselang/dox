@@ -34,39 +34,10 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		_, err = dox.PrePublish("", "", dryRun) // generate blank root page
+		err = dox.Publish(files, repoRoot, verbose, dryRun)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			os.Exit(1)
-		}
-
-		root, err := dox.Publish("", "", dryRun) // generate populated root page
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s\n", err)
-			os.Exit(1)
-		}
-
-		if verbose {
-			fmt.Printf("root published to %s\n", root)
-		}
-
-		for _, v := range files {
-			_, err := dox.PrePublish(v, root, dryRun)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error: %s\n", err)
-				os.Exit(1)
-			}
-		}
-
-		for _, v := range files {
-			id, err := dox.Publish(v, repoRoot, dryRun)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error: %s\n", err)
-				os.Exit(1)
-			}
-			if verbose {
-				fmt.Printf("%s published to %s\n", v, id)
-			}
 		}
 	},
 }

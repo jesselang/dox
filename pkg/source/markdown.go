@@ -7,11 +7,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/russross/blackfriday"
 )
 
+const rootPageFilename = "ROOT.md"
 const confluenceEditNotice = `<p>
   <ac:structured-macro ac:name="info" ac:schema-version="1">
     <ac:parameter ac:name="title">This page was published by dox</ac:parameter>
@@ -22,13 +24,14 @@ const confluenceEditNotice = `<p>
 </p>`
 
 type markdown struct {
-	filename   string
-	opts       Opts
-	id         string
-	title      string
 	data       []byte
+	directives []string
+	filename   string
+	id         string
 	ignore     bool
 	omitNotice bool
+	opts       Opts
+	title      string
 }
 
 func (m *markdown) Extensions() []string {
@@ -45,6 +48,10 @@ func (m *markdown) Matches(filename string) bool {
 	return false
 }
 
+func (m *markdown) File() string {
+	return m.filename
+}
+
 func (m *markdown) ID() string {
 	return m.id
 }
@@ -54,9 +61,27 @@ func (m *markdown) SetID(ID string) (err error) {
 		return errors.New("source already has an ID")
 	}
 
+	m.directives = append([]string{ID}, m.directives...)
+	doxHeader := fmt.Sprintf(m.escape(doxHeaderFmt), strings.Join(m.directives, ", "))
+
 	buf, err := ioutil.ReadFile(m.filename)
 	if err != nil {
 		return
+	}
+
+	lines := strings.Split(string(buf), "\n")
+
+	for i, line := range lines {
+		if i >= 2 {
+			lines = append([]string{doxHeader}, lines...)
+			break
+		}
+
+		found := regexp.MustCompile(m.escape(doxHeaderRegexp)).MatchString(line)
+		if found {
+			lines[i] = doxHeader
+			break
+		}
 	}
 
 	f, err := os.Create(m.filename)
@@ -65,8 +90,7 @@ func (m *markdown) SetID(ID string) (err error) {
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, m.escape(doxIdFmt)+"\n", ID)
-	_, err = f.Write(buf)
+	_, err = f.Write([]byte(strings.Join(lines, "\n")))
 	if err != nil {
 		return
 	}
@@ -98,6 +122,10 @@ func (m *markdown) Ignore() bool {
 	return m.ignore
 }
 
+func (m *markdown) IsRootPage() bool {
+	return filepath.Base(m.filename) == rootPageFilename
+}
+
 func (m *markdown) escape(input string) string {
 	return fmt.Sprintf("<!-- %s -->", input)
 }
@@ -114,12 +142,11 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 
 	r := bufio.NewReader(f)
 
-	doxIdFound := false
-	doxOmitNoticeFound := false
+	doxHeaderFound := false
 	inComment := false
 	var line string
 	count := 0
-	for count < 3 {
+	for count < 2 {
 		line, err = r.ReadString('\n')
 		if err != nil {
 			return
@@ -128,25 +155,17 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 			count++
 		}
 
-		if strings.Contains(line, m.escape(doxIgnore)) {
-			m.ignore = true
-			return
-		}
+		if !doxHeaderFound {
+			re := regexp.MustCompile(m.escape(doxHeaderRegexp))
+			match := re.FindStringSubmatch(line)
 
-		if !doxOmitNoticeFound {
-			if strings.Contains(line, m.escape(doxOmitNotice)) {
-				m.omitNotice = true
-				doxOmitNoticeFound = true
-				continue
-			}
-		}
-
-		// since ID check scans input, check for it last
-		if !doxIdFound {
-			found, err := fmt.Sscanf(line, m.escape(doxIdFmt), &m.id)
-
-			if err == nil && found > 0 {
-				doxIdFound = true
+			if len(match) > 0 {
+				doxHeaderFound = true
+				m.directives = regexp.MustCompile(`,\s*`).Split(match[1], -1)
+				err = m.parseDirectives()
+				if err != nil {
+					return err
+				}
 				continue
 			}
 		}
@@ -201,4 +220,31 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 	m.data = append(m.data, rest...)
 
 	return
+}
+
+func (m *markdown) parseDirectives() error {
+	// check that required directives are in expected position
+	for i, d := range m.directives {
+		if d == SDIgnore && i != 0 {
+			return fmt.Errorf("invalid dox header format; ignore should be first: %s\n", m.File())
+		}
+		if regexp.MustCompile(SDID).MatchString(d) && i != 0 {
+			return fmt.Errorf("invalid dox header format; Confluence ID should be first: %s\n", m.File())
+		}
+	}
+
+	for _, d := range m.directives {
+		switch {
+		case d == SDIgnore:
+			m.ignore = true
+			// since file is ignored, do not continue execution
+			return nil
+		case regexp.MustCompile(SDID).MatchString(d):
+			m.id = d
+		case d == SDOmitNotice:
+			m.omitNotice = true
+		}
+	}
+
+	return nil
 }

@@ -24,6 +24,10 @@ func (r *root) Matches(filename string) bool {
 	return filename == ""
 }
 
+func (r *root) File() string {
+	return ""
+}
+
 func (r *root) ID() string {
 	return viper.GetString("root_id")
 }
@@ -55,6 +59,10 @@ func (r *root) Output() string {
 
 func (r *root) Ignore() bool {
 	return false
+}
+
+func (r *root) IsRootPage() bool {
+	return true
 }
 
 func (r *root) parse(filename string, opts Opts) (err error) {

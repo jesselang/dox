@@ -28,20 +28,51 @@ EOF
 dox [-v]
 ```
 
-dox will publish **all markdown files** as children of a generated root page.
-Each markdown file will be modified with a dox header, and `.dox.yaml` will be
-updated to include the page_id of the generated root page. Be sure to commit
-`.dox.yaml` and these changes to markdown in your source code management.
+dox will publish **all markdown files** as children of a root page. Each
+markdown file will be modified with a dox header. Be sure to commit `.dox.yaml`
+and the modified markdown in your source code management.
 
-### Ignored Files
+## dox Header
 
-If a file should not be published, add the ignore directive to the top of the file:
+All markdown files should have a *dox header*. The dox header is a single line
+comment at the top of source files that contains a comma separated list of
+items. The items include a page ID and optional *source directives*.
+
+All **published** pages will have the page ID included in the dox header.
+
+```
+<!-- dox: 1234567890 -->
+```
+
+## Source Directives
+
+Source directives allow the user to control how files are published. They are
+defined as items in the comma separated list in the dox header.
+
+```
+<!-- dox: 1234567890, <directive>, <directive> -->
+```
+
+### Ignore Directive
+
+If a file should not be published, use the ignore directive. The ignore
+directive should be the only item in the dox header.
 
 ```
 <!-- dox: ignore -->
 ```
 
-### Relative Linking
+### Omit Notice Directive
+
+By default, dox adds a notice at the top of each published page stating that
+modifications to the page should be done to the source file. This notice can be
+omitted.
+
+```
+<!-- dox: 1234567890, omit-notice -->
+```
+
+## Relative Linking
 
 Websites like github allow markdown files to relatively link to other files in
 the repository. dox will try to replicate this functionality by changing
