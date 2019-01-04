@@ -4,24 +4,32 @@ import (
 	"fmt"
 )
 
-const doxIdFmt = "dox: %s"
-const doxIgnore = "dox: ignore"
-const doxOmitNotice = "dox: omit-notice"
+const doxHeaderFmt = "dox: %s"
+const doxHeaderRegexp = `dox: (.*)`
+
+// source directives (SD)
+const (
+	SDID = `\d+`
+	SDIgnore = "ignore"
+	SDOmitNotice = "omit-notice"
+)
 
 type Opts struct {
+	DoxNoticeFileUrl string
 	StripComments    bool
 	TrimSpace        bool
-	DoxNoticeFileUrl string
 }
 
-type source interface {
+type Source interface {
 	Extensions() []string
-	Matches(string) bool
+	File() string
 	ID() string
+	Ignore() bool
+	IsRootPage() bool
+	Matches(string) bool
+	Output() string
 	SetID(string) error
 	Title() string
-	Output() string
-	Ignore() bool
 
 	parse(string, Opts) error
 }
@@ -34,7 +42,7 @@ func Extensions() (list []string) {
 	return
 }
 
-func New(filename string, opts Opts) (s source, err error) {
+func New(filename string, opts Opts) (s Source, err error) {
 	for _, s = range sourceList() {
 		if s.Matches(filename) {
 			err = s.parse(filename, opts)
@@ -49,6 +57,6 @@ func New(filename string, opts Opts) (s source, err error) {
 	)
 }
 
-func sourceList() []source {
-	return []source{&markdown{}, &root{}}
+func sourceList() []Source {
+	return []Source{&markdown{}, &root{}}
 }
