@@ -67,8 +67,8 @@ func Publish(files []string, repoRoot string, verbose bool, dryRun bool) error {
 	var sources []source.Source
 	for _, file := range files {
 		src, err := source.New(file, source.Opts{
-			StripComments: true,
-			TrimSpace: true,
+			StripComments:    true,
+			TrimSpace:        true,
 			DoxNoticeFileUrl: fileBrowseUrl(browseUrlBase, repoRoot, file),
 		})
 		if err != nil {
