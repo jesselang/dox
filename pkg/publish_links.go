@@ -3,8 +3,8 @@ package dox
 import (
 	"fmt"
 	"io"
-	"os"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
