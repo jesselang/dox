@@ -57,7 +57,9 @@ func getLocalLinkedAnchors(content string, file string) ([]string, error) {
 		anchorHrefPath := filepath.Join(fileDir, anchorHref)
 		if _, err := os.Stat(anchorHrefPath); !os.IsNotExist(err) {
 			localAnchorHrefs = append(localAnchorHrefs, anchorHref)
-		} else {
+		} else if !strings.HasPrefix(anchorHref, "#") {
+			// URL fragments are not parsed above, so only warn if anchorHref
+			// can not URL fragment.
 			fmt.Printf("warn: could not find file %s\n", anchorHrefPath)
 		}
 	}
