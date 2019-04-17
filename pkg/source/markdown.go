@@ -208,8 +208,8 @@ func (m *markdown) parse(filename string, opts Opts) (err error) {
 		}
 	}
 
-	if m.title == "" {
-		return errors.New("title not found")
+	if !m.ignore && m.title == "" {
+		return fmt.Errorf("%s: title not found", filename)
 	}
 
 	rest, err := ioutil.ReadAll(r)
