@@ -38,7 +38,8 @@ func getImageSrcsFromHTML(content string) ([]string, error) {
 			}
 		}
 	}
-	return imageSrcs, nil
+	// Commented out because go vet complains that this in unreachable.
+	// return imageSrcs, nil
 }
 
 func getImageSrcFiles(content string, file string) ([]string, error) {
