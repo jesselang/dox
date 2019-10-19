@@ -5,14 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"os"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/net/html"
 	"github.com/jesselang/go-confluence"
-
+	"golang.org/x/net/html"
 )
 
 func getImageSrcsFromHTML(content string) ([]string, error) {
