@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/jesselang/dox/pkg/source"
+	"github.com/spf13/afero"
 )
 
 var fileArray [64]string
@@ -35,13 +36,13 @@ func walk(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-func FindAll(path string) (files []string, err error) {
+func FindAll(fs afero.Fs, path string) (files []string, err error) {
 	fileList = fileArray[0:0]
-	path, err = FindRepoRoot(path)
+	path, err = FindRepoRoot(fs, path)
 	if err != nil {
 		return
 	}
-	if err = filepath.Walk(path, walk); err != nil {
+	if err = afero.Walk(fs, path, walk); err != nil {
 		return
 	}
 
@@ -50,13 +51,13 @@ func FindAll(path string) (files []string, err error) {
 	return
 }
 
-func FindRepoRoot(path string) (root string, err error) {
+func FindRepoRoot(fs afero.Fs, path string) (root string, err error) {
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return
 	}
 	for {
-		info, err := os.Stat(filepath.Join(path, ".git"))
+		info, err := fs.Stat(filepath.Join(path, ".git"))
 
 		if err == nil && info.IsDir() {
 			break
