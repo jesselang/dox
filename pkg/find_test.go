@@ -14,8 +14,14 @@ var docsRoot = filepath.Join(mockRepoRoot, "docs")
 
 func TestFindRepoRoot(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll(docsRoot, 0755)
-	fs.MkdirAll(filepath.Join(mockRepoRoot, ".git", "objects"), 0755)
+	if err := fs.MkdirAll(docsRoot, 0755); err != nil {
+		t.Error(err)
+	}
+
+	if err := fs.MkdirAll(filepath.Join(mockRepoRoot, ".git", "objects"), 0755); err != nil {
+		t.Error(err)
+	}
+
 	path, err := dox.FindRepoRoot(fs, docsRoot)
 	if err != nil {
 		t.Error(err)
@@ -27,7 +33,10 @@ func TestFindRepoRoot(t *testing.T) {
 
 func TestFindRepoRootWithoutGitRepo(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll(docsRoot, 0755)
+	if err := fs.MkdirAll(docsRoot, 0755); err != nil {
+		t.Error(err)
+	}
+
 	_, err := dox.FindRepoRoot(fs, docsRoot)
 	if err == nil {
 		t.Error("expected an error")
