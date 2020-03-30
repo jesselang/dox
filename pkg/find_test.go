@@ -2,29 +2,33 @@ package dox_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/jesselang/dox/pkg"
 	"github.com/spf13/afero"
 )
 
+var mockRepoRoot = filepath.Join("/", "project", "repo")
+var docsRoot = filepath.Join(mockRepoRoot, "docs")
+
 func TestFindRepoRoot(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll("/project/repo/docs", 0755)
-	fs.MkdirAll("/project/repo/.git/objects", 0755)
-	path, err := dox.FindRepoRoot(fs, "/project/repo/docs")
+	fs.MkdirAll(docsRoot, 0755)
+	fs.MkdirAll(filepath.Join(mockRepoRoot, ".git", "objects"), 0755)
+	path, err := dox.FindRepoRoot(fs, docsRoot)
 	if err != nil {
 		t.Error(err)
 	}
-	if path != "/project/repo" {
-		t.Errorf("expected %s, got %s", "/project/repo", path)
+	if path != mockRepoRoot {
+		t.Errorf("expected %s, got %s", mockRepoRoot, path)
 	}
 }
 
 func TestFindRepoRootWithoutGitRepo(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll("/project/repo/docs", 0755)
-	_, err := dox.FindRepoRoot(fs, "/project/repo/docs")
+	fs.MkdirAll(docsRoot, 0755)
+	_, err := dox.FindRepoRoot(fs, docsRoot)
 	if err == nil {
 		t.Error("expected an error")
 	}
@@ -49,8 +53,8 @@ func TestFindAll(t *testing.T) {
 	}
 
 	expected := []string{
-		root + "/EXAMPLE.md",
-		root + "/README.md",
+		filepath.Join(root, "EXAMPLE.md"),
+		filepath.Join(root, "README.md"),
 	}
 
 	for i, v := range files {
