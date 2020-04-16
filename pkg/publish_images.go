@@ -5,14 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"os"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/net/html"
 	"github.com/jesselang/go-confluence"
-
+	"golang.org/x/net/html"
 )
 
 func getImageSrcsFromHTML(content string) ([]string, error) {
@@ -39,7 +38,8 @@ func getImageSrcsFromHTML(content string) ([]string, error) {
 			}
 		}
 	}
-	return imageSrcs, nil
+	// Commented out because go vet complains that this in unreachable.
+	// return imageSrcs, nil
 }
 
 func getImageSrcFiles(content string, file string) ([]string, error) {
