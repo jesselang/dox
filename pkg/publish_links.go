@@ -36,7 +36,8 @@ func getAnchorHrefsFromHTML(content string) ([]string, error) {
 			}
 		}
 	}
-	return anchorHrefs, nil
+	// Commented out because go vet complains that this in unreachable.
+	// return anchorHrefs, nil
 }
 
 func getLocalLinkedAnchors(content string, file string) ([]string, error) {
