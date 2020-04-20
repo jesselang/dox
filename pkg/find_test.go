@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var mockRepoRoot = filepath.Join("/", "project", "repo")
+var mockRepoRoot = filepath.Clean(filepath.FromSlash("/project/repo"))
 var docsRoot = filepath.Join(mockRepoRoot, "docs")
 
 func TestFindRepoRoot(t *testing.T) {
