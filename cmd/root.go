@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/jesselang/dox/pkg"
+	"github.com/spf13/afero"
 )
 
 var dryRun bool
@@ -28,7 +29,8 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		files, err := dox.FindAll(repoRoot)
+		fs := afero.NewOsFs()
+		files, err := dox.FindAll(fs, repoRoot)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			os.Exit(1)
@@ -57,7 +59,7 @@ func init() {
 		panic(err)
 	}
 
-	repoRoot, err = dox.FindRepoRoot(path)
+	repoRoot, err = dox.FindRepoRoot(afero.NewOsFs(), path)
 	if err != nil {
 		panic(err)
 	}
