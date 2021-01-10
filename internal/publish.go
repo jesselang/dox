@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jesselang/dox/pkg/source"
+	"github.com/jesselang/dox/internal/source"
 	"github.com/jesselang/go-confluence"
 	"github.com/spf13/viper"
 )

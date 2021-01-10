@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesselang/dox/pkg"
+	"github.com/jesselang/dox/internal"
 	"github.com/spf13/afero"
 )
 

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/jesselang/dox/pkg"
+	"github.com/jesselang/dox/internal"
 	"github.com/spf13/afero"
 )
 

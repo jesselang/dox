@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jesselang/dox/pkg/source"
+	"github.com/jesselang/dox/internal/source"
 	"golang.org/x/net/html"
 )
 

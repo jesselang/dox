@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jesselang/dox/pkg/source"
+	"github.com/jesselang/dox/internal/source"
 	"github.com/spf13/afero"
 )
 
