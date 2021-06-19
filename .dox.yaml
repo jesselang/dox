@@ -1,4 +1,5 @@
-uri: http://localhost:8090
-space: DEMO
-title: "dox: publish docs from your repos"
-browse_url_base: https://github.com/jesselang/dox/blob/master
+browse_url_base: https://github.com/jesselang/dox/blob/main
+root_id: "1639088156"
+space: DS
+title: 'dox: publish docs from your repos'
+uri: https://jesselang.atlassian.net/wiki

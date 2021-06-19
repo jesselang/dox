@@ -1,0 +1,4 @@
+uri: http://localhost:8090
+space: DEMO
+title: "dox: publish docs from your repos"
+browse_url_base: https://github.com/jesselang/dox/blob/master
