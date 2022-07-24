@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package dox_test
@@ -66,6 +67,12 @@ func TestFindAll(t *testing.T) {
 	expected := []string{
 		filepath.Join(root, "EXAMPLE.md"),
 		filepath.Join(root, "README.md"),
+		filepath.Join(root, "ROADMAP.md"),
+		filepath.Join(root, "sandbox", "issue-16.md"),
+	}
+
+	if len(files) != len(expected) {
+		t.Fatalf("unexpected files: %v", files)
 	}
 
 	for i, v := range files {
