@@ -23,6 +23,10 @@ func walk(path string, info os.FileInfo, err error) error {
 		return filepath.SkipDir
 	}
 
+	if name == "vendor" {
+		return filepath.SkipDir
+	}
+
 	if info.IsDir() {
 		return nil
 	}
